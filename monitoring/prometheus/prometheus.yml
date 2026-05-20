@@ -1,0 +1,66 @@
+server:
+  http_listen_port: 9090
+  log_level: info
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'ad-platform'
+    environment: 'development'
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files:
+  - 'alerts/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Event Collector service
+  - job_name: 'event-collector'
+    static_configs:
+      - targets: ['event-collector:8000']
+    metrics_path: '/metrics'
+
+  # Recommendation Engine
+  - job_name: 'recommendation-engine'
+    static_configs:
+      - targets: ['recommendation-engine:8000']
+    metrics_path: '/metrics'
+
+  # Ad Server
+  - job_name: 'ad-server'
+    static_configs:
+      - targets: ['ad-server:8000']
+    metrics_path: '/metrics'
+
+  # Bidding Engine
+  - job_name: 'bidding-engine'
+    static_configs:
+      - targets: ['bidding-engine:8080']
+    metrics_path: '/metrics'
+
+  # PostgreSQL
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres:5432']
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # Kafka
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']

@@ -1,0 +1,311 @@
+version: '3.9'
+
+services:
+  # ============ INFRASTRUCTURE SERVICES ============
+  
+  # Apache Zookeeper (required for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - ad-platform-network
+
+  # Apache Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - ad-platform-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Kafka UI for management
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - ad-platform-network
+
+  # PostgreSQL (Main database)
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ad_platform
+      POSTGRES_MULTIPLE_DATABASES: event_db,user_db,ad_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - ad-platform-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Caching & Feature Store)
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - ad-platform-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO (S3-compatible object storage)
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - ad-platform-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ============ APPLICATION SERVICES ============
+
+  # Event Collector API (Running manually with Python)
+  # event-collector:
+  #   build:
+  #     context: ./services/event-collector
+  #     dockerfile: Dockerfile
+  #   container_name: event-collector
+  #   ports:
+  #     - "8001:8000"
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/event_db
+  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+  #     - REDIS_URL=redis://redis:6379
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     - postgres
+  #     - kafka
+  #     - redis
+  #   networks:
+  #     - ad-platform-network
+  #   restart: unless-stopped
+
+  # Stream Processor (Running manually with Poetry + Python)
+  # stream-processor:
+  #   build:
+  #     context: ./services/stream-processor
+  #     dockerfile: Dockerfile
+  #   container_name: stream-processor
+  #   environment:
+  #     - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/event_db
+  #     - REDIS_URL=redis://redis:6379
+  #     - MINIO_ENDPOINT=minio:9000
+  #     - MINIO_ACCESS_KEY=minioadmin
+  #     - MINIO_SECRET_KEY=minioadmin
+  #   depends_on:
+  #     - kafka
+  #     - postgres
+  #     - redis
+  #     - minio
+  #   networks:
+  #     - ad-platform-network
+  #   restart: unless-stopped
+
+  # Recommendation Engine (TODO: Not implemented yet - using Stream Processor instead)
+  # recommendation-engine:
+  #   build:
+  #     context: ./services/recommendation-engine
+  #     dockerfile: Dockerfile
+  #   container_name: recommendation-engine
+  #   ports:
+  #     - "8002:8000"
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/user_db
+  #     - REDIS_URL=redis://redis:6379
+  #     - MODEL_PATH=/models
+  #     - LOG_LEVEL=INFO
+  #   volumes:
+  #     - ./ml/models:/models
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   networks:
+  #     - ad-platform-network
+  #   restart: unless-stopped
+
+  # Ad Server (TODO: Not implemented yet)
+  # ad-server:
+  #   build:
+  #     context: ./services/ad-server
+  #     dockerfile: Dockerfile
+  #   container_name: ad-server
+  #   ports:
+  #     - "8003:8000"
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ad_db
+  #     - REDIS_URL=redis://redis:6379
+  #     - RECOMMENDATION_API_URL=http://recommendation-engine:8000
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - recommendation-engine
+  #   networks:
+  #     - ad-platform-network
+  #   restart: unless-stopped
+
+  # Bidding Engine (TODO: Not implemented yet)
+  # bidding-engine:
+  #   build:
+  #     context: ./services/bidding-engine
+  #     dockerfile: Dockerfile
+  #   container_name: bidding-engine
+  #   ports:
+  #     - "8004:8080"
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ad_db
+  #     - REDIS_ADDR=redis:6379
+  #     - AD_SERVER_URL=http://ad-server:8000
+  #     - LOG_LEVEL=info
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - ad-server
+  #   networks:
+  #     - ad-platform-network
+  #   restart: unless-stopped
+
+  # ============ MONITORING SERVICES ============
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
+  # Jaeger (Distributed Tracing)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+      - "9411:9411"
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
+networks:
+  ad-platform-network:
+    driver: bridge
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  postgres-data:
+  redis-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:

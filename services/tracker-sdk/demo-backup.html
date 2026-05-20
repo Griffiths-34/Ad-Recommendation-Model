@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Demo - Ad Tracking Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 2rem;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .categories {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .categories h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .category-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .category-btn:hover, .category-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        .product-category {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            font-size: 1.3rem;
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 0.7rem;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #229954;
+        }
+
+        .ad-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .ad-banner h2 {
+            margin-bottom: 1rem;
+        }
+
+        .tracking-console {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #2c3e50;
+            color: white;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .tracking-console h4 {
+            margin-bottom: 0.5rem;
+            color: #3498db;
+        }
+
+        .event-log {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .event-entry {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .event-name {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .event-time {
+            color: #95a5a6;
+            font-size: 0.8rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+            z-index: 2000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>🛒 ShopDemo</h1>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search for products...">
+            </div>
+            <div class="cart-icon" onclick="viewCart()">
+                🛒 Cart
+                <span class="cart-count" id="cartCount">0</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="ad-banner" data-ad-id="banner-001" data-campaign-id="camp-gaming-2024">
+            <h2>🎮 Gaming Week Sale!</h2>
+            <p>Up to 50% off on gaming laptops, keyboards, and mice</p>
+        </div>
+
+        <div class="categories">
+            <h3>Categories</h3>
+            <div class="category-buttons">
+                <button class="category-btn active" data-category="all">All Products</button>
+                <button class="category-btn" data-category="gaming">Gaming</button>
+                <button class="category-btn" data-category="accessories">Accessories</button>
+                <button class="category-btn" data-category="laptops">Laptops</button>
+                <button class="category-btn" data-category="peripherals">Peripherals</button>
+            </div>
+        </div>
+
+        <div class="products-grid" id="productsGrid"></div>
+    </div>
+
+    <div class="tracking-console">
+        <h4>📊 Real-time Event Tracking Console</h4>
+        <div class="event-log" id="eventLog"></div>
+    </div>
+
+    <!-- Include the tracker SDK -->
+    <script src="dist/tracker.min.js"></script>
+    
+    <script>
+        // Sample products database
+        const products = [
+            { id: 'prod-001', name: 'Gaming Laptop Pro', category: 'gaming', price: 15999, emoji: '💻', brand: 'TechPro' },
+            { id: 'prod-002', name: 'Mechanical Keyboard RGB', category: 'peripherals', price: 1299, emoji: '⌨️', brand: 'KeyMaster' },
+            { id: 'prod-003', name: 'Gaming Mouse X1', category: 'peripherals', price: 799, emoji: '🖱️', brand: 'MouseTech' },
+            { id: 'prod-004', name: 'Wireless Headset', category: 'accessories', price: 899, emoji: '🎧', brand: 'SoundPro' },
+            { id: 'prod-005', name: 'USB-C Hub', category: 'accessories', price: 499, emoji: '🔌', brand: 'ConnectPlus' },
+            { id: 'prod-006', name: 'Gaming Chair Pro', category: 'gaming', price: 3999, emoji: '🪑', brand: 'ComfortZone' },
+            { id: 'prod-007', name: 'Ultrawide Monitor', category: 'gaming', price: 8999, emoji: '🖥️', brand: 'ViewMax' },
+            { id: 'prod-008', name: 'Laptop Stand', category: 'accessories', price: 299, emoji: '📐', brand: 'ErgoDesk' },
+            { id: 'prod-009', name: 'Graphics Tablet', category: 'peripherals', price: 2499, emoji: '🎨', brand: 'DrawPro' },
+            { id: 'prod-010', name: 'Webcam 4K', category: 'accessories', price: 1499, emoji: '📷', brand: 'StreamCam' },
+            { id: 'prod-011', name: 'Business Laptop', category: 'laptops', price: 11999, emoji: '💼', brand: 'WorkStation' },
+            { id: 'prod-012', name: 'Portable SSD 1TB', category: 'accessories', price: 1899, emoji: '💾', brand: 'DataFast' },
+        ];
+
+        // Initialize cart
+        let cart = [];
+        let currentCategory = 'all';
+
+        // Initialize Ad Tracker
+        const tracker = new AdTracker({
+            apiEndpoint: 'http://localhost:8001',
+            apiKey: 'demo-api-key',
+            batchSize: 5,
+            batchInterval: 3000,
+            debug: true,
+            autoTrack: true,
+            respectDoNotTrack: false
+        });
+
+        // Simulate user identification
+        const userId = 'user-' + Math.random().toString(36).substr(2, 9);
+        tracker.identify(userId, {
+            email: `${userId}@demo.com`,
+            name: 'Demo User'
+        });
+
+        // Log events to console
+        const originalTrack = tracker.track.bind(tracker);
+        tracker.track = function(eventName, properties) {
+            logEvent(eventName, properties);
+            return originalTrack(eventName, properties);
+        };
+
+        function logEvent(eventName, properties) {
+            const eventLog = document.getElementById('eventLog');
+            const eventEntry = document.createElement('div');
+            eventEntry.className = 'event-entry';
+            eventEntry.innerHTML = `
+                <span class="event-name">${eventName}</span>
+                <span class="event-time">${new Date().toLocaleTimeString()}</span>
+                <div style="color: #95a5a6; font-size: 0.8rem;">${JSON.stringify(properties).substring(0, 100)}...</div>
+            `;
+            eventLog.insertBefore(eventEntry, eventLog.firstChild);
+            
+            // Keep only last 10 events
+            while (eventLog.children.length > 10) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+        }
+
+        // Render products
+        function renderProducts(category = 'all') {
+            const grid = document.getElementById('productsGrid');
+            const filteredProducts = category === 'all' 
+                ? products 
+                : products.filter(p => p.category === category);
+
+            grid.innerHTML = filteredProducts.map(product => `
+                <div class="product-card" onclick="viewProduct('${product.id}')">
+                    <div class="product-image">${product.emoji}</div>
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-category">${product.category}</div>
+                    <div class="product-price">R${product.price}</div>
+                    <button class="add-to-cart-btn" onclick="addToCart(event, '${product.id}')">
+                        Add to Cart
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // View product (track product view)
+        function viewProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            tracker.trackProductView({
+                productId: product.id,
+                productName: product.name,
+                category: product.category,
+                price: product.price,
+                currency: 'ZAR',
+                brand: product.brand
+            });
+        }
+
+        // Add to cart
+        function addToCart(event, productId) {
+            event.stopPropagation();
+            const product = products.find(p => p.id === productId);
+            cart.push(product);
+            updateCartCount();
+            
+            tracker.trackAddToCart({
+                productId: product.id,
+                productName: product.name,
+                category: product.category,
+                price: product.price,
+                currency: 'ZAR',
+                brand: product.brand,
+                quantity: 1
+            });
+
+            showNotification(`Added ${product.name} to cart!`);
+        }
+
+        // Update cart count
+        function updateCartCount() {
+            document.getElementById('cartCount').textContent = cart.length;
+        }
+
+        // View cart
+        function viewCart() {
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+
+            const total = cart.reduce((sum, p) => sum + p.price, 0);
+            const confirmPurchase = confirm(
+                `Cart (${cart.length} items):\n\n` +
+                cart.map(p => `${p.name} - R${p.price}`).join('\n') +
+                `\n\nTotal: R${total}\n\nProceed to checkout?`
+            );
+
+            if (confirmPurchase) {
+                completePurchase();
+            }
+        }
+
+        // Complete purchase
+        function completePurchase() {
+            const orderId = 'order-' + Date.now();
+            const total = cart.reduce((sum, p) => sum + p.price, 0);
+
+            tracker.trackPurchase({
+                orderId: orderId,
+                revenue: total,
+                currency: 'ZAR',
+                products: cart.map(p => ({
+                    productId: p.id,
+                    productName: p.name,
+                    category: p.category,
+                    price: p.price,
+                    currency: 'ZAR',
+                    brand: p.brand,
+                    quantity: 1
+                })),
+                tax: total * 0.15,
+                shipping: 0
+            });
+
+            showNotification(`Order ${orderId} placed successfully!`);
+            cart = [];
+            updateCartCount();
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            if (searchTerm.length >= 3) {
+                tracker.trackSearch({
+                    searchTerm: searchTerm,
+                    resultsCount: products.filter(p => 
+                        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length
+                });
+            }
+        });
+
+        // Category filtering
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentCategory = e.target.dataset.category;
+                renderProducts(currentCategory);
+                
+                tracker.track('category_filter', {
+                    category: currentCategory
+                });
+            });
+        });
+
+        // Track ad impression
+        setTimeout(() => {
+            tracker.trackAdImpression('banner-001', 'camp-gaming-2024', {
+                position: 'top-banner',
+                creative: 'gaming-week-sale'
+            });
+        }, 1000);
+
+        // Track ad click on banner
+        document.querySelector('.ad-banner').addEventListener('click', () => {
+            tracker.trackAdClick('banner-001', 'camp-gaming-2024', {
+                position: 'top-banner',
+                creative: 'gaming-week-sale'
+            });
+            
+            // Filter to gaming category
+            document.querySelector('[data-category="gaming"]').click();
+        });
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initial render
+        renderProducts();
+    </script>
+</body>
+</html>
