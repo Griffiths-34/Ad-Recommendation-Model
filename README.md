@@ -1,6 +1,18 @@
-# Ad Recommendation System - Production Ready
+# Ad Recommendation System — Production Ready
 
-A complete, production-grade ad recommendation platform implementing the full pipeline from user tracking to personalized ad delivery.
+A complete, production-grade ad recommendation platform implementing the full pipeline from user behaviour tracking to ML-powered personalised product recommendations — running live with real data.
+
+## Screenshots
+
+| Demo Store + Live Event Stream | Product Catalogue |
+|---|---|
+| ![Demo store with real-time event tracker](screenshots/demo-store-live-events.png) | ![Product catalogue by category](screenshots/demo-store-products.png) |
+
+| ML-Powered "Recommended For You" | Frequently Bought Together |
+|---|---|
+| ![Personalised recommendations with match scores](screenshots/ml-recommendations.png) | ![Frequently bought together engine](screenshots/frequently-bought-together.png) |
+
+> Every product card, recommendation score, and "Frequently Bought Together" result is driven by real events flowing through **Kafka → Stream Processor → PostgreSQL → Recommendation Engine** in real time.
 
 ## Architecture Overview
 
@@ -233,48 +245,47 @@ ad-recommendation-system/
 
 ### Local demo flow
 
-1. Start infrastructure services:
+1. Start all infrastructure services (Kafka, PostgreSQL, Redis, Grafana, Jaeger, MinIO):
 
 ```powershell
-cd "c:\Users\griff\Downloads\Ad Recommendation Model"
-docker-compose up -d
+docker compose up -d
 ```
 
-2. Start the Event Collector service:
+2. Copy the environment file and start the Event Collector:
 
 ```powershell
-cd .\services\event-collector
-python -m poetry install --no-root
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
+cd services\event-collector
+copy .env.example .env        # add JWT_SECRET_KEY to the .env file
+poetry install --no-root
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 8001
 ```
 
-3. Start the Stream Processor service:
+3. Start the Stream Processor (separate terminal):
 
 ```powershell
-cd .\services\stream-processor
-python -m poetry install --no-root
-python -m app.main
+cd services\stream-processor
+poetry install --no-root
+poetry run python -m app.main
 ```
 
-4. Open the frontend demo:
+4. Open the demo storefront:
 
 ```powershell
-start "" "services\tracker-sdk\demo.html"
+start services\tracker-sdk\demo.html
 ```
 
-5. Verify the system with the built-in test script:
+### Live service URLs
 
-```powershell
-cd "c:\Users\griff\Downloads\Ad Recommendation Model"
-python test_pipeline.py
-```
-
-### What to show in a demo
-- `http://localhost:8001/health` — Event Collector health check
-- `services\tracker-sdk\demo.html` — user behavior demo page
-- `http://localhost:8081` — Kafka UI
-- `http://localhost:16686` — Jaeger tracing
-- `python test_pipeline.py` — verified end-to-end pipeline test
+| Service | URL | Credentials |
+|---|---|---|
+| Demo storefront | `services/tracker-sdk/demo.html` | — |
+| Recommendations page | `services/tracker-sdk/recommendations.html` | — |
+| Event Collector API docs | http://localhost:8001/docs | — |
+| Kafka UI | http://localhost:8081 | — |
+| Grafana | http://localhost:3001 | admin / admin |
+| Jaeger tracing | http://localhost:16686 | — |
+| Prometheus | http://localhost:9095 | — |
+| MinIO console | http://localhost:9011 | minioadmin / minioadmin |
 
 ### Key endpoints
 - Event Collector: `http://localhost:8001`

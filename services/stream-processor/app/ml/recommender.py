@@ -3,11 +3,12 @@ ML-based Recommendation Engine.
 Implements collaborative filtering + content-based filtering.
 """
 
-import numpy as np
+import asyncio
+import math
 import structlog
 from typing import List, Dict, Tuple
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 
 from app.core.database import db
 
@@ -30,11 +31,12 @@ class RecommendationEngine:
     """
     
     def __init__(self):
-        self.user_features = {}  # user_id -> feature vector
-        self.product_features = {}  # product_id -> feature vector
-        self.user_similarity = {}  # user_id -> {similar_user_id: score}
-        self.product_similarity = {}  # product_id -> {similar_product_id: score}
-        self.last_updated = None
+        self.user_features: Dict = {}
+        self.product_features: Dict = {}
+        self.user_similarity: Dict = {}
+        self.product_similarity: Dict = {}
+        self.last_updated: datetime | None = None
+        self._load_lock = asyncio.Lock()
         
     async def load_features(self) -> None:
         """
@@ -101,7 +103,7 @@ class RecommendationEngine:
         await self._calculate_user_similarity()
         await self._calculate_product_similarity()
         
-        self.last_updated = datetime.utcnow()
+        self.last_updated = datetime.now(timezone.utc)
         
         logger.info(
             "features_loaded",
@@ -124,20 +126,20 @@ class RecommendationEngine:
         
         # Convert features to numerical vectors
         for user_id, features in self.user_features.items():
-            vector = np.array([
-                features['views'],
-                features['purchases'] * 10,  # Weight purchases higher
-                features['revenue'] / 1000,  # Normalize revenue
-                features['carts'] * 2,
-                features['searches'],
-                len(features['categories']),
-                len(features['brands']),
-            ], dtype=float)
+            vector = [
+                float(features['views']),
+                float(features['purchases'] * 10),  # Weight purchases higher
+                float(features['revenue'] / 1000),  # Normalize revenue
+                float(features['carts'] * 2),
+                float(features['searches']),
+                float(len(features['categories'])),
+                float(len(features['brands'])),
+            ]
             
             # Normalize vector
-            norm = np.linalg.norm(vector)
+            norm = math.sqrt(sum(value * value for value in vector))
             if norm > 0:
-                user_vectors[user_id] = vector / norm
+                user_vectors[user_id] = [value / norm for value in vector]
         
         # Calculate pairwise similarities
         for user_id, vector in user_vectors.items():
@@ -145,9 +147,9 @@ class RecommendationEngine:
             for other_id, other_vector in user_vectors.items():
                 if user_id != other_id:
                     # Cosine similarity = dot product of normalized vectors
-                    similarity = np.dot(vector, other_vector)
+                    similarity = sum(a * b for a, b in zip(vector, other_vector))
                     if similarity > 0.3:  # Threshold for relevance
-                        similarities[other_id] = float(similarity)
+                        similarities[other_id] = similarity
             
             # Store top 10 similar users
             top_similar = sorted(
@@ -222,9 +224,11 @@ class RecommendationEngine:
         Returns:
             List of recommended products with scores
         """
-        # Ensure features are loaded
+        # Ensure features are loaded — lock prevents concurrent cold-start reloads
         if not self.user_features or not self.product_features:
-            await self.load_features()
+            async with self._load_lock:
+                if not self.user_features or not self.product_features:
+                    await self.load_features()
         
         recommendations = defaultdict(float)
         
@@ -280,26 +284,25 @@ class RecommendationEngine:
         
     async def _collaborative_recommendations(self, user_id: str) -> List[Tuple[str, float]]:
         """Find products liked by similar users."""
-        recommendations = defaultdict(float)
-        
-        # Get similar users
+        recommendations: Dict[str, float] = defaultdict(float)
+
         similar_users = self.user_similarity.get(user_id, {})
-        
-        # Get products they interacted with
-        for similar_user_id, similarity_score in similar_users.items():
-            query = """
-                SELECT DISTINCT properties->>'productId' as product_id
-                FROM events
-                WHERE user_id = $1
-                AND event_name IN ('product_view', 'purchase', 'add_to_cart')
-                AND timestamp > NOW() - INTERVAL '30 days'
-            """
-            
-            products = await db.fetch(query, similar_user_id)
-            for product in products:
-                if product['product_id']:
-                    recommendations[product['product_id']] += similarity_score
-        
+        if not similar_users:
+            return []
+
+        # Single query for all similar users instead of one query per user
+        query = """
+            SELECT user_id, properties->>'productId' as product_id
+            FROM events
+            WHERE user_id = ANY($1)
+            AND event_name IN ('product_view', 'purchase', 'add_to_cart')
+            AND timestamp > NOW() - INTERVAL '30 days'
+        """
+        rows = await db.fetch(query, list(similar_users.keys()))
+        for row in rows:
+            if row['product_id']:
+                recommendations[row['product_id']] += similar_users[row['user_id']]
+
         return list(recommendations.items())
         
     async def _content_based_recommendations(self, user_id: str) -> List[Tuple[str, float]]:

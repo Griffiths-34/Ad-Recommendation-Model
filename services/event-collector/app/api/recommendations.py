@@ -6,14 +6,24 @@ for ML-generated recommendations from the Stream Processor.
 """
 
 import structlog
-from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+from fastapi.security.api_key import APIKeyHeader
+from typing import Optional
 import asyncpg
 from app.core.config import settings
 
 logger = structlog.get_logger()
 
 router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
+
+_api_key_header = APIKeyHeader(name=settings.API_KEY_HEADER, auto_error=False)
+
+
+async def _require_api_key(api_key: str = Security(_api_key_header)) -> None:
+    """Reject requests that don't carry a valid API key (when keys are configured)."""
+    if settings.VALID_API_KEYS and api_key not in settings.VALID_API_KEYS:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key")
+
 
 # Database connection pool
 db_pool: Optional[asyncpg.Pool] = None
@@ -39,7 +49,8 @@ async def get_db_pool() -> asyncpg.Pool:
 @router.get("/{user_id}")
 async def get_recommendations(
     user_id: str,
-    limit: int = Query(10, ge=1, le=50, description="Number of recommendations")
+    limit: int = Query(10, ge=1, le=50, description="Number of recommendations"),
+    _: None = Depends(_require_api_key),
 ):
     """
     Get personalized recommendations for a user.
@@ -224,18 +235,18 @@ async def get_recommendations(
                 "recommendations": final_recs
             }
             
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("recommendations_error", user_id=user_id, error=str(e))
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get recommendations: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail="Failed to get recommendations")
 
 
 @router.get("/complementary/{product_id}")
 async def get_complementary_products(
     product_id: str,
-    limit: int = Query(6, ge=1, le=20, description="Number of complementary products")
+    limit: int = Query(6, ge=1, le=20, description="Number of complementary products"),
+    _: None = Depends(_require_api_key),
 ):
     """
     Get complementary products (frequently bought together).
@@ -320,7 +331,4 @@ async def get_complementary_products(
         raise
     except Exception as e:
         logger.error("complementary_error", product_id=product_id, error=str(e))
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get complementary products: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail="Failed to get complementary products")

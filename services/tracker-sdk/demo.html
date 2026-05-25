@@ -1314,7 +1314,7 @@
         // Initialize Ad Tracker (handle UMD build exports)
         const TrackerClass = window.AdTracker.default || window.AdTracker.AdTracker || window.AdTracker;
         const tracker = new TrackerClass({
-            apiEndpoint: 'http://localhost:8002',
+            apiEndpoint: 'http://localhost:8001',
             apiKey: 'demo-api-key',
             batchSize: 5,
             batchInterval: 3000,

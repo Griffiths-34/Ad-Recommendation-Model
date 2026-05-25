@@ -1,7 +1,7 @@
 """Redis client for caching and rate limiting"""
 
 import json
-from typing import Any, Optional, Set
+from typing import Any, Set
 import importlib
 import structlog
 
@@ -29,7 +29,7 @@ class RedisClient:
     """Async Redis client wrapper"""
     
     def __init__(self):
-        self.redis: aioredis.Redis | None = None
+        self.redis: Any = None
         self.is_connected = False
     
     async def connect(self) -> None:
@@ -161,37 +161,48 @@ class RedisClient:
             logger.error("get_json_failed", key=key, error=str(e))
             return None
     
+    async def incrby(self, key: str, amount: int) -> int:
+        """Increment key value by amount"""
+        if not self.redis:
+            return 0
+        return await self.redis.incrby(key, amount)
+
     async def rate_limit_check(self, identifier: str, limit: int, window: int) -> tuple[bool, int]:
         """
-        Check rate limit for identifier
-        
+        Check rate limit for identifier.
+
+        Uses an atomic Lua script so the INCR and EXPIRE are a single operation —
+        avoids the race where two concurrent first-requests both see count==1 and
+        only one of them sets the expiry, leaving the key immortal.
+
         Args:
             identifier: Unique identifier (e.g., IP, user_id)
             limit: Maximum number of requests
             window: Time window in seconds
-            
+
         Returns:
             Tuple of (is_allowed, remaining_requests)
         """
         if not self.redis:
             return True, limit
-        
+
         key = f"rate_limit:{identifier}"
-        
+
+        # Atomic: increment and set TTL only on the very first call within the window
+        _LUA_INCR_EXPIRE = """
+            local count = redis.call('INCR', KEYS[1])
+            if count == 1 then
+                redis.call('EXPIRE', KEYS[1], ARGV[1])
+            end
+            return count
+        """
+
         try:
-            # Increment counter
-            count = await self.incr(key)
-            
-            # Set expiration on first request
-            if count == 1:
-                await self.expire(key, window)
-            
-            # Check if limit exceeded
+            count = await self.redis.eval(_LUA_INCR_EXPIRE, 1, key, window)
             is_allowed = count <= limit
             remaining = max(0, limit - count)
-            
             return is_allowed, remaining
-        
+
         except Exception as e:
             logger.error("rate_limit_check_failed", error=str(e))
             # Fail open - allow request on error

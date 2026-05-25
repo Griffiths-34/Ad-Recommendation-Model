@@ -57,8 +57,8 @@ class Settings(BaseSettings):
     
     # Security
     API_KEY_HEADER: str = "X-API-Key"
-    VALID_API_KEYS: List[str] = Field(default_factory=lambda: ["demo-api-key"])
-    JWT_SECRET_KEY: str = "your-secret-key-change-in-production"
+    VALID_API_KEYS: List[str] = Field(default_factory=list)
+    JWT_SECRET_KEY: str  # Required — set via JWT_SECRET_KEY env var; no default to prevent accidental exposure
     JWT_ALGORITHM: str = "HS256"
     
     # Rate Limiting

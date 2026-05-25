@@ -216,10 +216,10 @@ async def _cache_event_stats(events: List[dict]) -> None:
         
         # Update Redis counters
         for event_name, count in event_counts.items():
-            await redis_client.incr(f"event_count:{event_name}")
+            await redis_client.incrby(f"event_count:{event_name}", count)
         
-        # Update total counter
-        await redis_client.incr("event_count:total")
+        # Update total counter (increment by actual event count, not 1 per batch)
+        await redis_client.incrby("event_count:total", len(events))
         
         # Cache summary (expires in 5 minutes)
         summary = {

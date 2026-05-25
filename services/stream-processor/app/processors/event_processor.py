@@ -6,7 +6,7 @@ Core business logic for stream processor.
 import structlog
 import json
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.events import Event
 from app.core.database import db
@@ -65,13 +65,8 @@ class EventProcessor:
             raise
             
     async def _store_events(self, events: List[Event]) -> None:
-        """
-        Insert events into events table.
-        
-        Uses PostgreSQL COPY for 10x faster bulk inserts.
-        """
-        # Build INSERT query with UNNEST for batch insert
-        # This is 10-100x faster than individual INSERTs
+        """Insert events into events table using executemany for batch efficiency."""
+        # Parameterized batch insert via executemany
         query = """
             INSERT INTO events (
                 event_name, user_id, session_id, 
@@ -89,7 +84,7 @@ class EventProcessor:
                 event_dict["session_id"],
                 json.dumps(event_dict["properties"]),  # Convert dict to JSON string
                 event_dict["timestamp"],
-                datetime.utcnow()
+                datetime.now(timezone.utc)
             ))
         
         # Use executemany for batch insert
@@ -174,7 +169,7 @@ class EventProcessor:
                 updates["searches"],
                 list(updates["categories"]),
                 list(updates["brands"]),
-                datetime.utcnow()
+                datetime.now(timezone.utc)
             )
             
         logger.debug("user_features_updated", user_count=len(user_updates))
@@ -245,7 +240,7 @@ class EventProcessor:
                 updates["views"],
                 updates["purchases"],
                 updates["carts"],
-                datetime.utcnow()
+                datetime.now(timezone.utc)
             )
             
         logger.debug("product_metrics_updated", product_count=len(product_updates))

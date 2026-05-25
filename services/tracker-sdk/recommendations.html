@@ -379,55 +379,44 @@
         }
         document.getElementById('userIdDisplay').textContent = `User: ${userId}`;
 
-        const API_BASE = 'http://localhost:8002';
+        const API_BASE = 'http://localhost:8001';
 
-        // Product catalog matching demo.html
+        // Product catalog — names, brands, and images match demo.html exactly
         const productsCatalog = {
-            'prod-001': { name: 'Gaming Laptop Pro X1', brand: 'TechPro' },
-            'prod-002': { name: 'RGB Mechanical Keyboard', brand: 'KeyMaster' },
-            'prod-003': { name: 'Pro Gaming Mouse X1', brand: 'MouseTech' },
-            'prod-004': { name: 'Wireless Gaming Headset', brand: 'SoundPro' },
-            'prod-005': { name: 'USB-C Hub Pro', brand: 'ConnectPlus' },
-            'prod-006': { name: 'Ergonomic Gaming Chair', brand: 'ComfortZone' },
-            'prod-007': { name: 'Ultrawide 34" Monitor', brand: 'ViewMax' },
-            'prod-008': { name: 'Aluminum Laptop Stand', brand: 'ErgoDesk' },
-            'prod-009': { name: 'Graphics Drawing Tablet', brand: 'DrawPro' },
-            'prod-010': { name: '4K Webcam Pro', brand: 'StreamCam' },
-            'prod-011': { name: 'Business Ultrabook', brand: 'WorkStation' },
-            'prod-012': { name: 'Portable SSD 1TB', brand: 'DataFast' },
-            'prod-013': { name: 'Wireless Mouse Pad RGB', brand: 'MouseTech' },
-            'prod-014': { name: 'Studio Monitor Speakers', brand: 'SoundPro' },
-            'prod-015': { name: 'Mechanical Numpad', brand: 'KeyMaster' },
-            'prod-016': { name: 'Gaming Desk XL', brand: 'ErgoDesk' },
-            'prod-017': { name: 'VR Headset Pro', brand: 'ViewMax' },
-            'prod-018': { name: 'Smart LED Light Strip', brand: 'LightUp' },
-            'prod-019': { name: 'Capture Card 4K', brand: 'StreamCam' },
-            'prod-020': { name: 'Premium Laptop Backpack', brand: 'TravelPro' },
-            'prod-021': { name: 'Thunderbolt Dock', brand: 'ConnectPlus' },
-            'prod-022': { name: 'Studio Microphone', brand: 'SoundPro' },
-            'prod-023': { name: 'Cable Management Kit', brand: 'ErgoDesk' },
-            'prod-024': { name: 'Portable Monitor 15.6"', brand: 'ViewMax' },
-            'prod-025': { name: 'iPhone 15 Pro Max', brand: 'AppleCore' },
-            'prod-026': { name: 'Samsung Galaxy S24', brand: 'Samsung' },
-            'prod-027': { name: 'iPad Pro 12.9"', brand: 'AppleCore' },
-            'prod-028': { name: 'Samsung Galaxy Tab S9', brand: 'Samsung' },
-            'prod-029': { name: 'UltraHD 4K Monitor', brand: 'ViewMax' },
-            'prod-030': { name: 'Curved Gaming Monitor', brand: 'ViewMax' },
-            'prod-031': { name: 'Wireless Router WiFi 7', brand: 'NetConnect' },
-            'prod-032': { name: 'USB-C Hub 15 Ports', brand: 'ConnectPlus' },
-            'prod-033': { name: 'NAS Storage 12TB', brand: 'DataFast' },
-            'prod-034': { name: 'SSD External 4TB', brand: 'DataFast' },
-        };
-
-        // Product images by category
-        const categoryImages = {
-            'laptops': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=300&fit=crop',
-            'accessories': 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop',
-            'peripherals': 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&h=300&fit=crop',
-            'monitors': 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&h=300&fit=crop',
-            'gaming': 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400&h=300&fit=crop',
-            'storage': 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&h=300&fit=crop',
-            'networking': 'https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=400&h=300&fit=crop'
+            'prod-001': { name: 'Gaming Laptop Pro X1',    brand: 'TechPro',      image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400&h=300&fit=crop' },
+            'prod-002': { name: 'RGB Mechanical Keyboard', brand: 'KeyMaster',    image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&h=300&fit=crop' },
+            'prod-003': { name: 'Pro Gaming Mouse X1',     brand: 'MouseTech',    image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=300&fit=crop' },
+            'prod-004': { name: 'Wireless Gaming Headset', brand: 'SoundPro',     image: 'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400&h=300&fit=crop' },
+            'prod-005': { name: 'USB-C Hub Pro',           brand: 'ConnectPlus',  image: 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400&h=300&fit=crop' },
+            'prod-006': { name: 'Ergonomic Gaming Chair',  brand: 'ComfortZone',  image: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400&h=300&fit=crop' },
+            'prod-007': { name: 'Ultrawide 34" Monitor',   brand: 'ViewMax',      image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&h=300&fit=crop' },
+            'prod-008': { name: 'Aluminum Laptop Stand',   brand: 'ErgoDesk',     image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=300&fit=crop' },
+            'prod-009': { name: 'Graphics Drawing Tablet', brand: 'DrawPro',      image: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=400&h=300&fit=crop' },
+            'prod-010': { name: '4K Webcam Pro',           brand: 'StreamCam',    image: 'https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=400&h=300&fit=crop' },
+            'prod-011': { name: 'Business Ultrabook',      brand: 'WorkStation',  image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=300&fit=crop' },
+            'prod-012': { name: 'Portable SSD 1TB',        brand: 'DataFast',     image: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&h=300&fit=crop' },
+            'prod-013': { name: 'Wireless Mouse Pad RGB',  brand: 'MouseTech',    image: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=400&h=300&fit=crop' },
+            'prod-014': { name: 'Studio Monitor Speakers', brand: 'SoundPro',     image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?w=400&h=300&fit=crop' },
+            'prod-015': { name: 'Mechanical Numpad',       brand: 'KeyMaster',    image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&h=300&fit=crop' },
+            'prod-016': { name: 'Gaming Desk XL',          brand: 'ErgoDesk',     image: 'https://images.unsplash.com/photo-1593062096033-9a26b09da705?w=400&h=300&fit=crop' },
+            'prod-017': { name: 'VR Headset Pro',          brand: 'ViewMax',      image: 'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=400&h=300&fit=crop' },
+            'prod-018': { name: 'Smart LED Light Strip',   brand: 'LightUp',      image: 'https://images.unsplash.com/photo-1556228852-80a9e2a75a0e?w=400&h=300&fit=crop' },
+            'prod-019': { name: 'Capture Card 4K',         brand: 'StreamCam',    image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=400&h=300&fit=crop' },
+            'prod-020': { name: 'Premium Laptop Backpack', brand: 'TravelPro',    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=300&fit=crop' },
+            'prod-021': { name: 'Thunderbolt Dock',        brand: 'ConnectPlus',  image: 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400&h=300&fit=crop' },
+            'prod-022': { name: 'Studio Microphone',       brand: 'SoundPro',     image: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400&h=300&fit=crop' },
+            'prod-023': { name: 'Cable Management Kit',    brand: 'ErgoDesk',     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop' },
+            'prod-024': { name: 'Portable Monitor 15.6"',  brand: 'ViewMax',      image: 'https://images.unsplash.com/photo-1585792180666-f7347c490ee2?w=400&h=300&fit=crop' },
+            'prod-025': { name: 'iPhone 15 Pro Max',       brand: 'AppleCore',    image: 'https://images.unsplash.com/photo-1511707267537-b85faf00021e?w=400&h=300&fit=crop' },
+            'prod-026': { name: 'Samsung Galaxy S24',      brand: 'Samsung',      image: 'https://images.unsplash.com/photo-1511707267537-b85faf00021e?w=400&h=300&fit=crop' },
+            'prod-027': { name: 'iPad Pro 12.9"',          brand: 'AppleCore',    image: 'https://images.unsplash.com/photo-1432085221519-86d2416b7d58?w=400&h=300&fit=crop' },
+            'prod-028': { name: 'Samsung Galaxy Tab S9',   brand: 'Samsung',      image: 'https://images.unsplash.com/photo-1432085221519-86d2416b7d58?w=400&h=300&fit=crop' },
+            'prod-029': { name: 'UltraHD 4K Monitor',      brand: 'ViewMax',      image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&h=300&fit=crop' },
+            'prod-030': { name: 'Curved Gaming Monitor',   brand: 'ViewMax',      image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&h=300&fit=crop' },
+            'prod-031': { name: 'Wireless Router WiFi 7',  brand: 'NetConnect',   image: 'https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=400&h=300&fit=crop' },
+            'prod-032': { name: 'USB-C Hub 15 Ports',      brand: 'ConnectPlus',  image: 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400&h=300&fit=crop' },
+            'prod-033': { name: 'NAS Storage 12TB',        brand: 'DataFast',     image: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&h=300&fit=crop' },
+            'prod-034': { name: 'SSD External 4TB',        brand: 'DataFast',     image: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&h=300&fit=crop' },
         };
 
         // Format price
@@ -436,18 +425,11 @@
             return `R${parseFloat(price).toLocaleString()}`;
         }
 
-        // Get image for category
-        function getCategoryImage(category) {
-            if (!category) return 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop';
-            const cat = category.toLowerCase();
-            return categoryImages[cat] || 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop';
-        }
-
         // Create product card HTML
         function createProductCard(product) {
             const catalogProduct = productsCatalog[product.product_id] || {};
             const productName = catalogProduct.name || product.product_name || product.product_id;
-            const categoryImage = getCategoryImage(product.category);
+            const categoryImage = catalogProduct.image || 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop';
             const score = product.score ? (product.score * 100).toFixed(0) : '0';
             
             return `
@@ -503,7 +485,9 @@
         // Load personalized recommendations
         async function loadPersonalizedRecommendations() {
             try {
-                const response = await fetch(`${API_BASE}/api/recommendations/${userId}?limit=12`);
+                const response = await fetch(`${API_BASE}/api/recommendations/${userId}?limit=12`, {
+                    headers: { 'X-API-Key': 'demo-api-key' }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
@@ -549,7 +533,7 @@
                     <div class="error">
                         <strong>Error loading recommendations</strong><br>
                         ${error.message}<br>
-                        <small>Make sure the Event Collector service is running on port 8002</small>
+                        <small>Make sure the Event Collector service is running on port 8001</small>
                     </div>
                 `;
             }
@@ -569,7 +553,9 @@
             `;
             
             try {
-                const response = await fetch(`${API_BASE}/api/recommendations/complementary/${productId}?limit=6`);
+                const response = await fetch(`${API_BASE}/api/recommendations/complementary/${productId}?limit=6`, {
+                    headers: { 'X-API-Key': 'demo-api-key' }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
